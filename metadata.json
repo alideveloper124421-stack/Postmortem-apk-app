@@ -1,0 +1,6 @@
+{
+  "name": "APK Postmortem & Reverse Engineering Studio",
+  "description": "Universal APK deep static analysis, smali disassembler, AndroidManifest decoder, security audit, Frida hook generator, and comprehensive postmortem report export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
