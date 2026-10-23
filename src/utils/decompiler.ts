@@ -51,8 +51,8 @@ export function decompileToJava(cls: Partial<SmaliClass>): string {
   lines.push('');
   lines.push('import android.content.Context;');
   lines.push('import android.os.Bundle;');
-  lines.push('import javax.crypto.Cipher;');
-  lines.push('import javax.crypto.spec.SecretKeySpec;');
+  // GLITCH PATCH: Removed forced crypto imports
+  
   lines.push('');
   lines.push('/**');
   lines.push(` * Decompiled from DEX bytecode (${cls.className || simpleName})`);
@@ -114,7 +114,7 @@ export function decompileToJava(cls: Partial<SmaliClass>): string {
           } else if (trimmed.startsWith('return-void')) {
             lines.push(`        return;`);
           } else if (trimmed.startsWith('return')) {
-            lines.push(`        return result;`);
+            lines.push(`        // Real opcode decompilation pending`);
           }
         });
         if (insideIf) lines.push(`        }`);

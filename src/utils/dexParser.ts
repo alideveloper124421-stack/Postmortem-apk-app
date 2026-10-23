@@ -197,22 +197,7 @@ export function parseDexBuffer(buffer: Uint8Array): DexInfo {
             parameters: ['Landroid/content/Intent;', 'I', 'I'],
             returnType: 'I',
           });
-        } else {
-          for (let m = 0; m < Math.min(dMethodsLen.value + vMethodsLen.value, 4); m++) {
-            methods.push({
-              name: `executeOperation${m + 1}`,
-              signature: '(Ljava/lang/String;)Z',
-              accessFlags: ['public'],
-              instructions: [
-                '.registers 2',
-                'const/4 v0, 0x1',
-                'return v0',
-              ],
-              parameters: ['Ljava/lang/String;'],
-              returnType: 'Z',
-            });
-          }
-        }
+        } // GLITCH PATCH: Removed fake executeOperation stubs
       }
 
       // Synthesize high-fidelity Smali code
