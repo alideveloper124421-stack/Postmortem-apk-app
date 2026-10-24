@@ -15,7 +15,9 @@ import { parseAndroidManifest } from './axmlParser';
 import { parseDexBuffer } from './dexParser';
 import { runSecurityAudit } from './securityAuditor';
 import { generateFridaScripts } from './fridaGenerator';
-import { generateDeepPostmortemTextReport } from './reportGenerator';
+import { runModderRecon } from './modderRecon';
+import { parseIl2CppFromApk } from './il2cppParser';
+import { generateDeepPostmortemTextReport, generateInteractiveHtmlReport } from './reportGenerator';
 import { analyzeNativeLibraries } from './nativeAnalyzer';
 import { detectAntiTamperMechanisms } from './antiTamperDetector';
 import { generateDynamicTraceLogs } from './dynamicTracer';
@@ -224,6 +226,22 @@ export async function analyzeApkFile(
   onProgress?.('Generating tailored Frida dynamic instrumentation hooks...', 94);
   const fridaScripts = generateFridaScripts(manifest, dexInfo);
 
+  // 7. Modder & Reverse Engineering Reconnaissance (Kill-switches, VIP gates, Ads)
+  onProgress?.('Hunting Kill-Switches, VIP gates & Ad SDK targets...', 95);
+  const modderRecon = runModderRecon(dexInfo.classes, manifest, antiTamperRoutines);
+
+  // 8. Unity IL2CPP Dumper & Native Recovery
+  onProgress?.('Inspecting Unity IL2CPP metadata & recovering C# method offsets...', 97);
+  const filePaths = fileEntries.map((f) => f.path);
+  const metadataEntry = zipData.file(/global-metadata\.dat/i)[0];
+  let metadataBytes: Uint8Array | undefined;
+  if (metadataEntry) {
+    try {
+      metadataBytes = await metadataEntry.async('uint8array');
+    } catch {}
+  }
+  const il2cppDump = parseIl2CppFromApk(filePaths, metadataBytes);
+
   const result: ApkAnalysisResult = {
     fileName,
     fileSize,
@@ -239,13 +257,16 @@ export async function analyzeApkFile(
     xrefs,
     securityAudit,
     fridaScripts,
+    modderRecon,
+    il2cppDump,
     postmortemTextReport: '',
     analyzedAt: new Date().toISOString(),
   };
 
-  // 7. Deep Postmortem Report Compilation
-  onProgress?.('Compiling exhaustive Deep Postmortem text dossier...', 98);
+  // 8. Deep Postmortem & Interactive Dossier Compilation
+  onProgress?.('Compiling exhaustive Deep Postmortem text & interactive dossier...', 98);
   result.postmortemTextReport = generateDeepPostmortemTextReport(result);
+  result.interactiveHtmlReport = generateInteractiveHtmlReport(result);
 
   onProgress?.('Postmortem analysis complete!', 100);
   return result;

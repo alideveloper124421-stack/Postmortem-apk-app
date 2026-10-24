@@ -217,6 +217,97 @@ export interface FridaScriptDef {
   target?: string;
 }
 
+export interface KillSwitchTarget {
+  id: string;
+  className: string;
+  cleanClassName: string;
+  methodName: string;
+  signature: string;
+  returnType: 'boolean' | 'int' | 'object' | 'void';
+  category: 'VIP_PREMIUM' | 'LICENSE' | 'SUBSCRIPTION' | 'AD_REMOVAL' | 'FEATURE_GATE' | 'SECURITY_BYPASS' | 'BILLING';
+  confidence: 'HIGH' | 'MEDIUM' | 'EXPERIMENTAL';
+  reason: string;
+  originalSmali: string;
+  patchedSmali: string;
+  fridaHook: string;
+  suggestedAction: string;
+}
+
+export interface AdTrackerNetwork {
+  name: string;
+  category: 'ADS' | 'ANALYTICS';
+  packagePattern: string;
+  detectedClasses: string[];
+  manifestComponents: string[];
+  nukeRecipe: {
+    description: string;
+    smaliPatch: string;
+    fridaSnippet: string;
+  };
+}
+
+export interface ModderReconResult {
+  killSwitches: KillSwitchTarget[];
+  adTrackers: AdTrackerNetwork[];
+  masterFridaScript: string;
+  totalTargetsCount: number;
+}
+
+export interface Il2CppMethod {
+  name: string;
+  signature: string;
+  returnType: string;
+  parameters: { name: string; type: string }[];
+  offsetHex: string;
+  virtualAddress: string;
+  accessFlags: string[];
+  isStatic: boolean;
+  arm64HexPatch: {
+    originalHex: string;
+    patchHex: string;
+    strategy: 'FORCE_TRUE' | 'FORCE_FALSE' | 'RETURN_VOID' | 'MAX_INT' | 'CUSTOM';
+    description: string;
+  };
+  fridaInterceptorHook: string;
+  cppModMenuSnippet: string;
+}
+
+export interface Il2CppField {
+  name: string;
+  type: string;
+  offsetHex: string;
+  isStatic: boolean;
+}
+
+export interface Il2CppClass {
+  namespace: string;
+  name: string;
+  fullName: string;
+  typeToken: string;
+  methods: Il2CppMethod[];
+  fields: Il2CppField[];
+  isEnum: boolean;
+  isInterface: boolean;
+  isAbstract: boolean;
+}
+
+export interface Il2CppDumpResult {
+  detected: boolean;
+  metadataVersion?: number;
+  metadataSize?: number;
+  libil2cppPath?: string;
+  metadataPath?: string;
+  arch: string;
+  classesCount: number;
+  methodsCount: number;
+  classes: Il2CppClass[];
+  stringLiterals: string[];
+  dumpCsHeader: string;
+  scriptJson: string;
+  il2cppHeader: string;
+  unityModMenuBoilerplate: string;
+}
+
 export interface ApkAnalysisResult {
   fileName: string;
   fileSize: number;
@@ -246,6 +337,9 @@ export interface ApkAnalysisResult {
     infoCount: number;
   };
   fridaScripts: FridaScriptDef[];
+  modderRecon: ModderReconResult;
+  il2cppDump?: Il2CppDumpResult;
   postmortemTextReport: string;
+  interactiveHtmlReport?: string;
   analyzedAt: string;
 }

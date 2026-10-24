@@ -5,7 +5,9 @@
 import { ApkAnalysisResult, SmaliClass, SmaliMethod } from '../types/apk';
 import { runSecurityAudit } from './securityAuditor';
 import { generateFridaScripts } from './fridaGenerator';
-import { generateDeepPostmortemTextReport } from './reportGenerator';
+import { generateDeepPostmortemTextReport, generateInteractiveHtmlReport } from './reportGenerator';
+import { runModderRecon } from './modderRecon';
+import { parseIl2CppFromApk } from './il2cppParser';
 import { decompileToJava, decompileToKotlin } from './decompiler';
 import { buildControlFlowGraph } from './cfgBuilder';
 import { analyzeNativeLibraries } from './nativeAnalyzer';
@@ -167,6 +169,8 @@ export function getSecureVaultDemoApk(): ApkAnalysisResult {
   const dynamicTraceLogs = generateDynamicTraceLogs(manifest, enrichedDex);
   const xrefs = extractXrefs(enrichedDex);
 
+  const modderRecon = runModderRecon(enrichedDex.classes, manifest, antiTamperRoutines);
+
   const baseResult: ApkAnalysisResult = {
     fileName: 'SecureVault-v3.2.0-release.apk',
     fileSize: 3192800,
@@ -186,11 +190,14 @@ export function getSecureVaultDemoApk(): ApkAnalysisResult {
     xrefs,
     securityAudit,
     fridaScripts,
+    modderRecon,
+    il2cppDump: parseIl2CppFromApk(['lib/arm64-v8a/libcrypto_core.so']),
     postmortemTextReport: '',
     analyzedAt: new Date().toISOString(),
   };
 
   baseResult.postmortemTextReport = generateDeepPostmortemTextReport(baseResult);
+  baseResult.interactiveHtmlReport = generateInteractiveHtmlReport(baseResult);
   return baseResult;
 }
 
@@ -286,9 +293,10 @@ export function getNeoGameDemoApk(): ApkAnalysisResult {
   const files = [
     { name: 'AndroidManifest.xml', path: 'AndroidManifest.xml', size: 2800, compressedSize: 1100, isDex: false, isSmali: false, isResource: true, isNativeLib: false, isCert: false, category: 'RESOURCE' as const },
     { name: 'classes.dex', path: 'classes.dex', size: 1450200, compressedSize: 720100, isDex: true, isSmali: false, isResource: false, isNativeLib: false, isCert: false, category: 'DEX' as const },
+    { name: 'libil2cpp.so', path: 'lib/arm64-v8a/libil2cpp.so', size: 18450200, compressedSize: 8100200, isDex: false, isSmali: false, isResource: false, isNativeLib: true, isCert: false, category: 'NATIVE_LIB' as const },
+    { name: 'global-metadata.dat', path: 'assets/bin/Data/Managed/Metadata/global-metadata.dat', size: 3120000, compressedSize: 1200000, isDex: false, isSmali: false, isResource: false, isNativeLib: false, isCert: false, category: 'ASSET' as const },
     { name: 'libgame_engine.so', path: 'lib/arm64-v8a/libgame_engine.so', size: 14890200, compressedSize: 7100200, isDex: false, isSmali: false, isResource: false, isNativeLib: true, isCert: false, category: 'NATIVE_LIB' as const },
     { name: 'libgame_engine.so', path: 'lib/armeabi-v7a/libgame_engine.so', size: 11200100, compressedSize: 5400200, isDex: false, isSmali: false, isResource: false, isNativeLib: true, isCert: false, category: 'NATIVE_LIB' as const },
-    { name: 'libgame_engine.so', path: 'lib/x86_64/libgame_engine.so', size: 15100200, compressedSize: 7200200, isDex: false, isSmali: false, isResource: false, isNativeLib: true, isCert: false, category: 'NATIVE_LIB' as const },
   ];
 
   const certificates = {
@@ -324,6 +332,9 @@ export function getNeoGameDemoApk(): ApkAnalysisResult {
   const dynamicTraceLogs = generateDynamicTraceLogs(manifest, enrichedDex);
   const xrefs = extractXrefs(enrichedDex);
 
+  const modderRecon = runModderRecon(enrichedDex.classes, manifest, antiTamperRoutines);
+  const il2cppDump = parseIl2CppFromApk(files.map((f) => f.path));
+
   const baseResult: ApkAnalysisResult = {
     fileName: 'NeoGame-3D-v5.0.1.apk',
     fileSize: 32640000,
@@ -343,10 +354,13 @@ export function getNeoGameDemoApk(): ApkAnalysisResult {
     xrefs,
     securityAudit,
     fridaScripts,
+    modderRecon,
+    il2cppDump,
     postmortemTextReport: '',
     analyzedAt: new Date().toISOString(),
   };
 
   baseResult.postmortemTextReport = generateDeepPostmortemTextReport(baseResult);
+  baseResult.interactiveHtmlReport = generateInteractiveHtmlReport(baseResult);
   return baseResult;
 }

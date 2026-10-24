@@ -5,7 +5,9 @@
 import { ApkAnalysisResult, SmaliClass, SmaliMethod } from '../types/apk';
 import { runSecurityAudit } from './securityAuditor';
 import { generateFridaScripts } from './fridaGenerator';
-import { generateDeepPostmortemTextReport } from './reportGenerator';
+import { generateDeepPostmortemTextReport, generateInteractiveHtmlReport } from './reportGenerator';
+import { runModderRecon } from './modderRecon';
+import { parseIl2CppFromApk } from './il2cppParser';
 import { decompileToJava, decompileToKotlin } from './decompiler';
 import { buildControlFlowGraph } from './cfgBuilder';
 import { analyzeNativeLibraries } from './nativeAnalyzer';
@@ -404,6 +406,216 @@ export function getVulnBankDemoApk(): ApkAnalysisResult {
     return-object v0
 .end method`,
     },
+    {
+      className: 'Lcom/vulnbank/mobile/billing/LicenseManager;',
+      packageName: 'com.vulnbank.mobile.billing',
+      simpleName: 'LicenseManager',
+      superclass: 'Ljava/lang/Object;',
+      interfaces: [],
+      accessFlags: ['public'],
+      fields: [
+        { name: 'mIsPremium', type: 'Z', accessFlags: ['private', 'static'], value: 'false' },
+        { name: 'mLicenseStatus', type: 'Ljava/lang/String;', accessFlags: ['private'], value: '"TRIAL_EXPIRED"' },
+      ],
+      methods: [
+        {
+          name: '<init>',
+          signature: '()V',
+          accessFlags: ['public', 'constructor'],
+          parameters: [],
+          returnType: 'V',
+          instructions: ['.registers 1', 'invoke-direct {p0}, Ljava/lang/Object;-><init>()V', 'return-void'],
+        },
+        {
+          name: 'isPremiumUser',
+          signature: '()Z',
+          accessFlags: ['public', 'static'],
+          parameters: [],
+          returnType: 'Z',
+          instructions: [
+            '.registers 1',
+            'sget-boolean v0, Lcom/vulnbank/mobile/billing/LicenseManager;->mIsPremium:Z',
+            'return v0',
+          ],
+        },
+        {
+          name: 'hasVipAccess',
+          signature: '()Z',
+          accessFlags: ['public'],
+          parameters: [],
+          returnType: 'Z',
+          instructions: [
+            '.registers 2',
+            'const-string v0, "VIP_ACTIVE"',
+            'const-string v1, "TRIAL_EXPIRED"',
+            'invoke-virtual {v0, v1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z',
+            'move-result v0',
+            'return v0',
+          ],
+        },
+        {
+          name: 'isSubscriptionActive',
+          signature: '()Z',
+          accessFlags: ['public'],
+          parameters: [],
+          returnType: 'Z',
+          instructions: [
+            '.registers 2',
+            'const/4 v0, 0x0',
+            'return v0',
+          ],
+        },
+        {
+          name: 'isAdFreeEnabled',
+          signature: '()Z',
+          accessFlags: ['public'],
+          parameters: [],
+          returnType: 'Z',
+          instructions: [
+            '.registers 2',
+            'const/4 v0, 0x0',
+            'return v0',
+          ],
+        },
+      ],
+      rawSmali: `.class public Lcom/vulnbank/mobile/billing/LicenseManager;
+.super Ljava/lang/Object;
+.source "LicenseManager.java"
+
+.field private static mIsPremium:Z = false
+.field private mLicenseStatus:Ljava/lang/String; = "TRIAL_EXPIRED"
+
+.method public constructor <init>()V
+    .registers 1
+    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+    return-void
+.end method
+
+.method public static isPremiumUser()Z
+    .registers 1
+    sget-boolean v0, Lcom/vulnbank/mobile/billing/LicenseManager;->mIsPremium:Z
+    return v0
+.end method
+
+.method public hasVipAccess()Z
+    .registers 2
+    const/4 v0, 0x0
+    return v0
+.end method
+
+.method public isSubscriptionActive()Z
+    .registers 2
+    const/4 v0, 0x0
+    return v0
+.end method
+
+.method public isAdFreeEnabled()Z
+    .registers 2
+    const/4 v0, 0x0
+    return v0
+.end method`,
+    },
+    {
+      className: 'Lcom/vulnbank/mobile/security/AntiTamperGuard;',
+      packageName: 'com.vulnbank.mobile.security',
+      simpleName: 'AntiTamperGuard',
+      superclass: 'Ljava/lang/Object;',
+      interfaces: [],
+      accessFlags: ['public'],
+      fields: [],
+      methods: [
+        {
+          name: '<init>',
+          signature: '()V',
+          accessFlags: ['public', 'constructor'],
+          parameters: [],
+          returnType: 'V',
+          instructions: ['.registers 1', 'invoke-direct {p0}, Ljava/lang/Object;-><init>()V', 'return-void'],
+        },
+        {
+          name: 'isDeviceRooted',
+          signature: '()Z',
+          accessFlags: ['public', 'static'],
+          parameters: [],
+          returnType: 'Z',
+          instructions: [
+            '.registers 3',
+            'new-instance v0, Ljava/io/File;',
+            'const-string v1, "/system/bin/su"',
+            'invoke-direct {v0, v1}, Ljava/io/File;-><init>(Ljava/lang/String;)V',
+            'invoke-virtual {v0}, Ljava/io/File;->exists()Z',
+            'move-result v0',
+            'return v0',
+          ],
+        },
+        {
+          name: 'isDebuggerAttached',
+          signature: '()Z',
+          accessFlags: ['public', 'static'],
+          parameters: [],
+          returnType: 'Z',
+          instructions: [
+            '.registers 1',
+            'invoke-static {}, Landroid/os/Debug;->isDebuggerConnected()Z',
+            'move-result v0',
+            'return v0',
+          ],
+        },
+      ],
+      rawSmali: `.class public Lcom/vulnbank/mobile/security/AntiTamperGuard;
+.super Ljava/lang/Object;
+.source "AntiTamperGuard.java"
+
+.method public constructor <init>()V
+    .registers 1
+    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+    return-void
+.end method
+
+.method public static isDeviceRooted()Z
+    .registers 3
+    new-instance v0, Ljava/io/File;
+    const-string v1, "/system/bin/su"
+    invoke-direct {v0, v1}, Ljava/io/File;-><init>(Ljava/lang/String;)V
+    invoke-virtual {v0}, Ljava/io/File;->exists()Z
+    move-result v0
+    return v0
+.end method
+
+.method public static isDebuggerAttached()Z
+    .registers 1
+    invoke-static {}, Landroid/os/Debug;->isDebuggerConnected()Z
+    move-result v0
+    return v0
+.end method`,
+    },
+    {
+      className: 'Lcom/google/android/gms/ads/AdActivity;',
+      packageName: 'com.google.android.gms.ads',
+      simpleName: 'AdActivity',
+      superclass: 'Landroid/app/Activity;',
+      interfaces: [],
+      accessFlags: ['public'],
+      fields: [],
+      methods: [
+        {
+          name: 'showInterstitial',
+          signature: '()V',
+          accessFlags: ['public'],
+          parameters: [],
+          returnType: 'V',
+          instructions: ['.registers 1', 'return-void'],
+        },
+      ],
+      rawSmali: `.class public Lcom/google/android/gms/ads/AdActivity;
+.super Landroid/app/Activity;
+.source "AdActivity.java"
+
+.method public showInterstitial()V
+    .registers 1
+    return-void
+.end method`,
+    },
   ];
 
   const dex = {
@@ -497,6 +709,8 @@ export function getVulnBankDemoApk(): ApkAnalysisResult {
   const dynamicTraceLogs = generateDynamicTraceLogs(manifest, enrichedDex);
   const xrefs = extractXrefs(enrichedDex);
 
+  const modderRecon = runModderRecon(enrichedDex.classes, manifest, antiTamperRoutines);
+
   const baseResult: ApkAnalysisResult = {
     fileName: 'VulnBank-v2.4.1-insecure.apk',
     fileSize: 2082286,
@@ -516,10 +730,13 @@ export function getVulnBankDemoApk(): ApkAnalysisResult {
     xrefs,
     securityAudit,
     fridaScripts,
+    modderRecon,
+    il2cppDump: parseIl2CppFromApk(['lib/arm64-v8a/libvuln_crypto.so', 'lib/arm64-v8a/libil2cpp.so', 'assets/bin/Data/Managed/Metadata/global-metadata.dat']),
     postmortemTextReport: '',
     analyzedAt: new Date().toISOString(),
   };
 
   baseResult.postmortemTextReport = generateDeepPostmortemTextReport(baseResult);
+  baseResult.interactiveHtmlReport = generateInteractiveHtmlReport(baseResult);
   return baseResult;
 }

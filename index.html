@@ -13,65 +13,6 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
-  
-<script>
-// 🩸 GLITCH AI AUTO-REPORT INJECTOR (Intercepts existing report download)
-const OriginalBlob = window.Blob;
-window.Blob = function(chunks, options) {
-  // Agar app koi text file bana rahi hai jisme 'POSTMORTEM' likha hai, toh usay hijack karo!
-  if (options && options.type === 'text/plain' && chunks[0] && typeof chunks[0] === 'string' && chunks[0].includes('POSTMORTEM')) {
-    let reportText = chunks[0];
-    let aiSection = `\n\n================================================================================\n`;
-    aiSection += `# 🩸 GLITCH AI MODDING STRATEGY (AUTO-GENERATED)\n`;
-    aiSection += `================================================================================\n\n`;
-    
-    const classBlocks = reportText.split('-[CLASS #');
-    const killSwitches = [];
-    const adPackages = new Set();
-    
-    classBlocks.forEach(block => {
-      const classNameMatch = block.match(/L([^;]+);/);
-      if (!classNameMatch) return;
-      const className = classNameMatch[1].replace(/\//g, '.');
-      
-      // 1. Ad SDKs Detection
-      if (/admob|pangle|bytedance|applovin|unity3d\.ads|vungle|ironsource|facebook\.ads|noah|huichuan|ads_mobile_sdk/i.test(className)) {
-        adPackages.add(className.split('.').slice(0, 2).join('.'));
-      }
-      
-      // 2. Kill-Switch Detection (Boolean methods with premium keywords)
-      const methodMatches = block.matchAll(/\.method.*?\s+(is|has|check|can|should|premium|vip|pro|ads|license|bought|subscribe)[a-zA-Z0-9_]*\([^)]*\)Z/gi);
-      for (const m of methodMatches) {
-        killSwitches.push({ cls: className, method: m[0] });
-      }
-    });
-    
-    aiSection += `[1. KILL-SWITCHES & PREMIUM CHECKS]\n`;
-    if (killSwitches.length > 0) {
-      killSwitches.slice(0, 15).forEach((ks, i) => {
-        aiSection += `  > TARGET ${i+1}: ${ks.cls}\n    ${ks.method}\n    PATCH: Force return true (const/4 v0, 0x1)\n\n`;
-      });
-    } else {
-      aiSection += `  > No obvious boolean premium checks found. Manual string search required.\n\n`;
-    }
-    
-    aiSection += `[2. AD SDKs & TRACKERS (NUKE LIST)]\n`;
-    if (adPackages.size > 0) {
-      adPackages.forEach(pkg => { aiSection += `  > NUKE: ${pkg}.* (Remove from Manifest & Smali)\n`; });
-    } else {
-      aiSection += `  > No major Ad SDKs detected.\n`;
-    }
-    
-    aiSection += `\n[3. ACTION PLAN]\n`;
-    aiSection += `  > Feed this exact file to GLITCH AI. She will instantly generate Smali patches & Frida hooks.\n`;
-    
-    // Report ke aakhir mein AI section jorh do!
-    chunks[0] = reportText + aiSection;
-  }
-  return new OriginalBlob(chunks, options);
-};
-</script>
-
-</body>
+  </body>
 </html>
 
